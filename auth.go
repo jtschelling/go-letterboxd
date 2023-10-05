@@ -1,10 +1,13 @@
 package letterboxd
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"io"
 	"net/http"
+	"net/url"
+	"strings"
 	"time"
 )
 
@@ -41,28 +44,22 @@ type OAuthError struct {
 
 // Use the authorization_code grant type to obtain a token from /auth/token
 func (c *Client) PostAuthTokenAuthorizationCode(code string, redirectURI string) (AccessToken, error) {
-	authorizationCodeBody := AuthorizationCodeBody{
-		GrantType:    "authorization_code",
-		Code:         code,
-		RedirectURI:  redirectURI,
-		ClientID:     c.clientID,
-		ClientSecret: c.clientSecret,
-	}
+	formData := url.Values{}
+	formData.Set("grant_type", "authorization_code")
+	formData.Set("code", code)
+	formData.Set("redirect_uri", redirectURI)
+	formData.Set("client_id", c.clientID)
+	formData.Set("client_secret", c.clientSecret)
 
-	// Marshal the authorizationCodeBody into JSON
-	body, err := json.Marshal(authorizationCodeBody)
+	fmt.Println(formData.Encode())
+
+	// Create an HTTP POST request to c.BaseURL+"/auth/token"
+	req, err := http.NewRequest(http.MethodPost, c.BaseURL+"/auth/token", strings.NewReader(formData.Encode()))
 	if err != nil {
 		return AccessToken{}, err
 	}
 
-	// Create an HTTP POST request to c.BaseURL/auth/token
-	req, err := http.NewRequest("POST", c.BaseURL+"/auth/token", bytes.NewReader(body))
-	if err != nil {
-		return AccessToken{}, err
-	}
-
-	// Set the Content-Type header to application/json
-	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 	// Perform the HTTP request
 	client := &http.Client{
@@ -77,7 +74,8 @@ func (c *Client) PostAuthTokenAuthorizationCode(code string, redirectURI string)
 
 	// Check the response status code
 	if resp.StatusCode != http.StatusOK {
-		return AccessToken{}, errors.New("failed to obtain access token")
+		b, _ := io.ReadAll(resp.Body)
+		return AccessToken{}, errors.New(string(b))
 	}
 
 	// Parse the response body into an AccessToken struct
