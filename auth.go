@@ -3,7 +3,6 @@ package letterboxd
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -50,8 +49,6 @@ func (c *Client) PostAuthTokenAuthorizationCode(code string, redirectURI string)
 	formData.Set("redirect_uri", redirectURI)
 	formData.Set("client_id", c.clientID)
 	formData.Set("client_secret", c.clientSecret)
-
-	fmt.Println(formData.Encode())
 
 	// Create an HTTP POST request to c.BaseURL+"/auth/token"
 	req, err := http.NewRequest(http.MethodPost, c.BaseURL+"/auth/token", strings.NewReader(formData.Encode()))
