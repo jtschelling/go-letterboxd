@@ -56,7 +56,8 @@ func (c *Client) GetMe(authZToken string) (MemberAccount, error) {
 		return MemberAccount{}, err
 	}
 
-	req.Header.Set("Authorization", authZToken)
+	var bearer = "Bearer " + authZToken
+	req.Header.Set("Authorization", bearer)
 
 	// Perform the HTTP request
 	client := &http.Client{
